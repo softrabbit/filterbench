@@ -342,9 +342,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[0] + m_vflp[0][_chnl] * m_vfa[0];
+			/* lp = in * m_vfb[0] + m_vflp[0][_chnl] * m_vfa[0];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[0] * ( m_vfhp[0][_chnl] + in - m_vflast[0][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -355,7 +355,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[0][_chnl] = in;
-			m_vflp[0][_chnl] = lp;
+			//m_vflp[0][_chnl] = lp;
 			m_vfhp[0][_chnl] = hp;
 			m_vfbp[0][_chnl] = bp;
 
@@ -363,9 +363,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[0] + m_vflp[2][_chnl] * m_vfa[0];
+			/*lp = in * m_vfb[0] + m_vflp[2][_chnl] * m_vfa[0];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[0] * ( m_vfhp[2][_chnl] + in - m_vflast[2][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -376,7 +376,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[2][_chnl] = in;
-			m_vflp[2][_chnl] = lp;
+			// m_vflp[2][_chnl] = lp;
 			m_vfhp[2][_chnl] = hp;
 			m_vfbp[2][_chnl] = bp;  
 			      
@@ -384,9 +384,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[0] + m_vflp[4][_chnl] * m_vfa[0];
+			/* lp = in * m_vfb[0] + m_vflp[4][_chnl] * m_vfa[0];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[0] * ( m_vfhp[4][_chnl] + in - m_vflast[4][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -397,7 +397,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[4][_chnl] = in;
-			m_vflp[4][_chnl] = lp;
+			//m_vflp[4][_chnl] = lp;
 			m_vfhp[4][_chnl] = hp;
 			m_vfbp[4][_chnl] = bp;  
 
@@ -408,9 +408,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[1] + m_vflp[1][_chnl] * m_vfa[1];
+			/*lp = in * m_vfb[1] + m_vflp[1][_chnl] * m_vfa[1];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[1] * ( m_vfhp[1][_chnl] + in - m_vflast[1][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -421,7 +421,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[1][_chnl] = in;
-			m_vflp[1][_chnl] = lp;
+			//m_vflp[1][_chnl] = lp;
 			m_vfhp[1][_chnl] = hp;
 			m_vfbp[1][_chnl] = bp;
 
@@ -429,9 +429,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[1] + m_vflp[3][_chnl] * m_vfa[1];
+			/* lp = in * m_vfb[1] + m_vflp[3][_chnl] * m_vfa[1];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[1] * ( m_vfhp[3][_chnl] + in - m_vflast[3][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -442,7 +442,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[3][_chnl] = in;
-			m_vflp[3][_chnl] = lp;
+			// m_vflp[3][_chnl] = lp;
 			m_vfhp[3][_chnl] = hp;
 			m_vfbp[3][_chnl] = bp;  
 
@@ -450,9 +450,9 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[1] + m_vflp[5][_chnl] * m_vfa[1];
+			/* lp = in * m_vfb[1] + m_vflp[5][_chnl] * m_vfa[1];
 			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
+			lp = (lp < -1.f) ? -1.f : lp; */
 
 			hp = m_vfc[1] * ( m_vfhp[5][_chnl] + in - m_vflast[5][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -463,7 +463,7 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[5][_chnl] = in;
-			m_vflp[5][_chnl] = lp;
+			// m_vflp[5][_chnl] = lp;
 			m_vfhp[5][_chnl] = hp;
 			m_vfbp[5][_chnl] = bp;  
 
@@ -493,10 +493,7 @@ public:
 
 		if( m_doubleFilter )
 		{
-		  std::cout << "." << std::endl;
-	  
-		  // return m_subFilter->update( out, _chnl );
-		  return out;
+			return m_subFilter->update( out, _chnl );
 		}
 
 		// Clipper band limited sigmoid
@@ -507,7 +504,6 @@ public:
 	inline void calcFilterCoeffs( float _freq, float _q
 				/*, const bool _q_is_bandwidth = false*/ )
 	{
-	  std::cout << m_doubleFilter << std::endl;
 
 		// temp coef vars
 		_freq = qBound(minFreq(), _freq, 20000.0f); // limit freq and q for not getting
