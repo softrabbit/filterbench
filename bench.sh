@@ -3,11 +3,11 @@
 # All filters
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter"
 # "faster" filters, the ones not 4x oversampled internally
-FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
-#FILTERS="Formantfilter"
+#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
+FILTERS="Moog"
 
 # How to optimize
-OPTIMIZE="-O3 -msse2 -ftree-vectorize -mfpmath=sse -ffast-math"
+OPTIMIZE="-O3 -msse2 -ftree-vectorize -mfpmath=sse -funroll-loops"
 
 BINDIR=tests
 OUTDIR=output
@@ -70,8 +70,8 @@ if [ "$1" == "--check" ] ; then
     # Compare output of optimized and modified, doesn't work too well with -ffast-math
     mkdir $OUTDIR
     for F in $FILTERS ; do 
-	$BINDIR/optimized $FILTER output > $OUTDIR/$F-opt
-	$BINDIR/modified $FILTER output > $OUTDIR/$F-mod
+	$BINDIR/optimized $F output > $OUTDIR/$F-opt
+	$BINDIR/modified $F output > $OUTDIR/$F-mod
 	if diff -sq $OUTDIR/$F-opt $OUTDIR/$F-mod >/dev/null ; then
 	    echo -e "OK    \t" $F
 	else

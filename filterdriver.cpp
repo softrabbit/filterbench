@@ -18,7 +18,7 @@ using namespace std;
 // Data to try, 600 frames is a realistic buffer size?
 #include "akwf_raw_005.h"
 
-__attribute__((optimize("-O0")))
+
 int main( int argc, const char* argv[] ) {
 
      const string filternames[] = { "LowPass", "HiPass", "BandPass_CSG", "BandPass_CZPG", "Notch",
@@ -46,7 +46,7 @@ int main( int argc, const char* argv[] ) {
 	  if(string(argv[1]) == filternames[i])
 	       selection = i;
      }
-     if(i==-1) {
+     if(selection==-1) {
 	  cout << "Filter '" << argv[1] << "' invalid." << endl;
 	  return 2;
      }
@@ -62,6 +62,7 @@ int main( int argc, const char* argv[] ) {
 	       tmp1 = filter->update( buffer[i % BUFFERSIZE], 0 );
 	       cout << tmp1 << endl;
 	  }
+	  cout.flush();
 	  return 0;
      } 
 
