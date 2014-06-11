@@ -18,6 +18,7 @@ using namespace std;
 // Data to try, 600 frames is a realistic buffer size?
 #include "akwf_raw_005.h"
 
+__attribute__((optimize("-O0")))
 int main( int argc, const char* argv[] ) {
 
      const string filternames[] = { "LowPass", "HiPass", "BandPass_CSG", "BandPass_CZPG", "Notch",
@@ -64,12 +65,6 @@ int main( int argc, const char* argv[] ) {
 	  return 0;
      } 
 
-     // Tweak the buffer contents if needed
-     if(argc>2 && string(argv[2]) == "denormal") {
-	  for(i=0; i<BUFFERSIZE; i++) {
-	       buffer[i] = 1e-39;
-	  }
-     }
 
      // Test only setting frequency
      if(argc>2 && string(argv[2]) == "coeffs") {
@@ -78,6 +73,14 @@ int main( int argc, const char* argv[] ) {
 	  }
 	  for(i=0; i<ITERATIONS; i++) {
 	       filter->calcFilterCoeffs( buffer[i % BUFFERSIZE], (i%100)*.05);
+	  }
+	  return 0;
+     }
+
+     // Tweak the buffer contents if needed
+     if(argc>2 && string(argv[2]) == "denormal") {
+	  for(i=0; i<BUFFERSIZE; i++) {
+	       buffer[i] = 1e-39;
 	  }
      }
 

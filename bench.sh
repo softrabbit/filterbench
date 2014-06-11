@@ -3,11 +3,11 @@
 # All filters
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter"
 # "faster" filters, the ones not 4x oversampled internally
-#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
+FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
 #FILTERS="Formantfilter"
 
 # How to optimize
-OPTIMIZE="-O3 -msse2 -ftree-vectorize -mfpmath=sse"
+OPTIMIZE="-O3 -msse2 -ftree-vectorize -mfpmath=sse -ffast-math"
 
 BINDIR=tests
 OUTDIR=output
@@ -40,7 +40,7 @@ if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then
     g++ -DFILTER=$F -o $BINDIR/modified filterdriver.cpp $OPTIMIZE
 fi
 
-if [ "$1" == "--run" -o "$1" == "--coeffs" ] ; then 
+if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 
     for F in $FILTERS ; do
 	for BINARY in baseline optimized modified ; do 
 
@@ -50,13 +50,15 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" ] ; then
 		COUNT=1
 	    fi
 
-	    COEFFS=""
+	    ARGSTR=""
 	    if [ $1 == "--coeffs" ] ; then 
-		COEFFS="coeffs"
+		ARGSTR="coeffs"
+	    elif [ $1 == "--denormal" ] ; then 
+		ARGSTR="denormal"
 	    fi
 
 	    while [ $((COUNT--)) -gt 0 ] ; do
-		/usr/bin/time -f "%U %C" $BINDIR/$BINARY $F
+		/usr/bin/time -f "%U %C" $BINDIR/$BINARY $F $ARGSTR
 	    done
 	    echo ""
 	done
