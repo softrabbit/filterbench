@@ -49,7 +49,7 @@ const float F_PI_2 = F_PI*0.5;
 #define qMin(A, B)	(((A) < (B)) ? (A) : (B))
 #define qMax(A, B)	(((A) > (B)) ? (A) : (B))
 #define qBound(N, V, M)	qMax(N, qMin(M, V))
-#define tLimit qBound
+#define tLimit(x,x1,x2) qBound((x1), (x), (x2))
 
 #else
 #include "lmms_basics.h"
@@ -156,7 +156,7 @@ public:
 			m_rclp1[_chnl] = m_rcbp1[_chnl] = m_rchp1[_chnl] = m_rclast1[_chnl] = 0.0f;
 			
 			for(int i=0; i<6; i++)
-			   m_vflp[i][_chnl] = m_vfbp[i][_chnl] = m_vfhp[i][_chnl] = m_vflast[i][_chnl] = 0.0f;
+			   m_vfbp[i][_chnl] = m_vfhp[i][_chnl] = m_vflast[i][_chnl] = 0.0f;
 		}
 	}
 
@@ -333,7 +333,7 @@ public:
 
 			case Formantfilter:
 			{
-				sample_t lp, hp, bp, in;
+				sample_t hp, bp, in;
 
 		out = 0;
 		for(int o=0; o<4; o++)
@@ -342,10 +342,6 @@ public:
 			in = _in0 + m_vfbp[0][_chnl] * m_vfq;
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
-
-			lp = in * m_vfb[0] + m_vflp[0][_chnl] * m_vfa[0];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
 
 			hp = m_vfc[0] * ( m_vfhp[0][_chnl] + in - m_vflast[0][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -356,17 +352,12 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[0][_chnl] = in;
-			m_vflp[0][_chnl] = lp;
 			m_vfhp[0][_chnl] = hp;
 			m_vfbp[0][_chnl] = bp;
 
 			in = bp + m_vfbp[2][_chnl] * m_vfq;
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
-
-			lp = in * m_vfb[0] + m_vflp[2][_chnl] * m_vfa[0];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
 
 			hp = m_vfc[0] * ( m_vfhp[2][_chnl] + in - m_vflast[2][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -377,17 +368,12 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[2][_chnl] = in;
-			m_vflp[2][_chnl] = lp;
 			m_vfhp[2][_chnl] = hp;
 			m_vfbp[2][_chnl] = bp;  
 			      
 			in = bp + m_vfbp[4][_chnl] * m_vfq;
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
-
-			lp = in * m_vfb[0] + m_vflp[4][_chnl] * m_vfa[0];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
 
 			hp = m_vfc[0] * ( m_vfhp[4][_chnl] + in - m_vflast[4][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -398,7 +384,6 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[4][_chnl] = in;
-			m_vflp[4][_chnl] = lp;
 			m_vfhp[4][_chnl] = hp;
 			m_vfbp[4][_chnl] = bp;  
 
@@ -409,10 +394,6 @@ public:
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
 
-			lp = in * m_vfb[1] + m_vflp[1][_chnl] * m_vfa[1];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
-
 			hp = m_vfc[1] * ( m_vfhp[1][_chnl] + in - m_vflast[1][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
 			hp = (hp < -1.f) ? -1.f : hp;
@@ -422,17 +403,12 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[1][_chnl] = in;
-			m_vflp[1][_chnl] = lp;
 			m_vfhp[1][_chnl] = hp;
 			m_vfbp[1][_chnl] = bp;
 
 			in = bp + m_vfbp[3][_chnl] * m_vfq;
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
-
-			lp = in * m_vfb[1] + m_vflp[3][_chnl] * m_vfa[1];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
 
 			hp = m_vfc[1] * ( m_vfhp[3][_chnl] + in - m_vflast[3][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -443,17 +419,12 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[3][_chnl] = in;
-			m_vflp[3][_chnl] = lp;
 			m_vfhp[3][_chnl] = hp;
 			m_vfbp[3][_chnl] = bp;  
 
 			in = bp + m_vfbp[5][_chnl] * m_vfq;
 			in = (in > +1.f) ? +1.f : in;
 			in = (in < -1.f) ? -1.f : in;
-
-			lp = in * m_vfb[1] + m_vflp[5][_chnl] * m_vfa[1];
-			lp = (lp > +1.f) ? +1.f : lp;
-			lp = (lp < -1.f) ? -1.f : lp;
 
 			hp = m_vfc[1] * ( m_vfhp[5][_chnl] + in - m_vflast[5][_chnl] );
 			hp = (hp > +1.f) ? +1.f : hp;
@@ -464,7 +435,6 @@ public:
 			bp = (bp < -1.f) ? -1.f : bp;
 
 			m_vflast[5][_chnl] = in;
-			m_vflp[5][_chnl] = lp;
 			m_vfhp[5][_chnl] = hp;
 			m_vfbp[5][_chnl] = bp;  
 
@@ -679,7 +649,7 @@ private:
 	frame m_rcbp1, m_rclp1, m_rchp1, m_rclast1;
 
 	// in/out history for Formant-filters
-	frame m_vfbp[6], m_vflp[6], m_vfhp[6], m_vflast[6];
+	frame m_vfbp[6], m_vfhp[6], m_vflast[6];
 	
 	FilterTypes m_type;
 	bool m_doubleFilter;
