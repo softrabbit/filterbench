@@ -4,10 +4,10 @@
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter"
 # "faster" filters, the ones not 4x oversampled internally
 #FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
-FILTERS="Moog"
+#FILTERS="Formantfilter"
 
 # How to optimize
-OPTIMIZE="-O3 -msse2 -ftree-vectorize -mfpmath=sse -funroll-loops"
+OPTIMIZE="-O2 -msse2 -mfpmath=sse"
 
 BINDIR=tests
 OUTDIR=output
@@ -27,7 +27,7 @@ fi
 
 if [ "$1" == "--compile" ] ; then 
     mkdir $BINDIR
-    echo "Compiling baseline $F"
+    echo "Compiling baseline"
     # Baseline
     g++ -DBASELINE -o $BINDIR/baseline filterdriver.cpp -O2
     # Baseline with compile-time optimization
@@ -36,8 +36,8 @@ fi
 
 if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then 
     mkdir $BINDIR
-    echo "Compiling modified $F"
-    g++ -DFILTER=$F -o $BINDIR/modified filterdriver.cpp $OPTIMIZE
+    echo "Compiling modified ( $OPTIMIZE )"
+    g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE
 fi
 
 if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 

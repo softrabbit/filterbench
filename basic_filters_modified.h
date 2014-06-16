@@ -49,7 +49,13 @@ const float F_PI_2 = F_PI*0.5;
 #define qMin(A, B)	(((A) < (B)) ? (A) : (B))
 #define qMax(A, B)	(((A) > (B)) ? (A) : (B))
 #define qBound(N, V, M)	qMax(N, qMin(M, V))
-#define tLimit(x,x1,x2) qBound((x1), (x), (x2))
+
+template<class T>
+inline T tLimit( const T x, const T x1, const T x2 )
+{
+        return qBound( x1, x, x2 );
+}
+
 
 #else
 #include "lmms_basics.h"
@@ -160,33 +166,197 @@ public:
 		}
 	}
 
+	// Pass a buffer of N samples, return values in same
+	inline void update_n( sample_t *_in0 )
+	{
+	  switch( m_type )
+	    {
+	    case Moog:
+	      {
+		for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+		  sample_t x = _in0[_chnl] - m_r*m_y4[_chnl];
+		  sample_t tmp;
+		  // four cascaded onepole filters
+		  // (bilinear transform)
+		  tmp = ( x + m_oldx[_chnl] ) * m_p - m_k * m_y1[_chnl];
+		  m_y1[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+		  
+		  tmp = ( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p - m_k * m_y2[_chnl];
+		  m_y2[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+		  
+		  tmp = ( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p - m_k * m_y3[_chnl];
+		  m_y3[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+		  
+		  tmp = ( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p - m_k * m_y4[_chnl];
+		  m_y4[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+		  
+		  m_oldx[_chnl] = x;
+		  m_oldy1[_chnl] = m_y1[_chnl];
+		  m_oldy2[_chnl] = m_y2[_chnl];
+		  m_oldy3[_chnl] = m_y3[_chnl];
+		  _in0[_chnl] = m_y4[_chnl] - m_y4[_chnl] * m_y4[_chnl] *
+		    m_y4[_chnl] * ( 1.0f / 6.0f );
+		}
+		break;
+	      }
+	    case Formantfilter:
+	      {
+		sample_t hp, bp, in;
+		/// TODO: shuffle loops so channels are in innermost loop for better vectorization
+		for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+		  sample_t out = 0.0f;
+		  for(int o=0; o<4; o++)
+		    {
+		      // first formant
+		      in = _in0[_chnl] + m_vfbp[0][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+		    
+		      hp = m_vfc[0] * ( m_vfhp[0][_chnl] + in - m_vflast[0][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+		      
+		      bp = hp * m_vfb[0] + m_vfbp[0][_chnl] * m_vfa[0];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+		      
+		      m_vflast[0][_chnl] = in;
+		      m_vfhp[0][_chnl] = hp;
+		      m_vfbp[0][_chnl] = bp;
+
+		      in = bp + m_vfbp[2][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+		      
+		      hp = m_vfc[0] * ( m_vfhp[2][_chnl] + in - m_vflast[2][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+		      
+		      bp = hp * m_vfb[0] + m_vfbp[2][_chnl] * m_vfa[0];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+
+		      m_vflast[2][_chnl] = in;
+		      m_vfhp[2][_chnl] = hp;
+		      m_vfbp[2][_chnl] = bp;  
+			      
+		      in = bp + m_vfbp[4][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+
+		      hp = m_vfc[0] * ( m_vfhp[4][_chnl] + in - m_vflast[4][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+
+		      bp = hp * m_vfb[0] + m_vfbp[4][_chnl] * m_vfa[0];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+		    
+		      m_vflast[4][_chnl] = in;
+		      m_vfhp[4][_chnl] = hp;
+		      m_vfbp[4][_chnl] = bp;  
+
+		      out += bp;
+
+		      // second formant
+		      in = _in0[_chnl] + m_vfbp[0][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+		    
+		      hp = m_vfc[1] * ( m_vfhp[1][_chnl] + in - m_vflast[1][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+		    
+		      bp = hp * m_vfb[1] + m_vfbp[1][_chnl] * m_vfa[1];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+
+		      m_vflast[1][_chnl] = in;
+		      m_vfhp[1][_chnl] = hp;
+		      m_vfbp[1][_chnl] = bp;
+
+		      in = bp + m_vfbp[3][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+
+		      hp = m_vfc[1] * ( m_vfhp[3][_chnl] + in - m_vflast[3][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+
+		      bp = hp * m_vfb[1] + m_vfbp[3][_chnl] * m_vfa[1];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+
+		      m_vflast[3][_chnl] = in;
+		      m_vfhp[3][_chnl] = hp;
+		      m_vfbp[3][_chnl] = bp;  
+
+		      in = bp + m_vfbp[5][_chnl] * m_vfq;
+		      in = (in > +1.f) ? +1.f : in;
+		      in = (in < -1.f) ? -1.f : in;
+
+		      hp = m_vfc[1] * ( m_vfhp[5][_chnl] + in - m_vflast[5][_chnl] );
+		      hp = (hp > +1.f) ? +1.f : hp;
+		      hp = (hp < -1.f) ? -1.f : hp;
+
+		      bp = hp * m_vfb[1] + m_vfbp[5][_chnl] * m_vfa[1];
+		      bp = (bp > +1.f) ? +1.f : bp;
+		      bp = (bp < -1.f) ? -1.f : bp;
+
+		      m_vflast[5][_chnl] = in;
+		      m_vfhp[5][_chnl] = hp;
+		      m_vfbp[5][_chnl] = bp;  
+
+		      out += bp;
+		    }
+		  
+		  // return( out/2.0f );
+		  _in0[_chnl] = out/2.0f;
+		}
+		break;
+	      }
+	      
+
+	    default:
+	      {
+		for(int c = 0; c < CHANNELS; c++) {
+		  _in0[c] = update( _in0[c], c);
+
+		}
+		break;
+	      }
+	    }
+
+	  // This should be made iterative at some point, 
+	  // as recursion stops some versions of GCC from inlining
+	  if( m_doubleFilter )
+	    {
+	      m_subFilter->update_n( _in0 );
+	    }
+	}
+
 	inline sample_t update( sample_t _in0, ch_cnt_t _chnl )
 	{
 		sample_t out;
 		switch( m_type )
 		{
-			case Moog:
+		  /* case Moog:
 			{
 				sample_t x = _in0 - m_r*m_y4[_chnl];
-
+				sample_t tmp;
 				// four cascaded onepole filters
 				// (bilinear transform)
-				m_y1[_chnl] = tLimit(
-						( x + m_oldx[_chnl] ) * m_p
-							- m_k * m_y1[_chnl],
-								-10.0f, 10.0f );
-				m_y2[_chnl] = tLimit(
-					( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
-							- m_k * m_y2[_chnl],
-								-10.0f, 10.0f );
-				m_y3[_chnl] = tLimit(
-					( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
-							- m_k * m_y3[_chnl],
-								-10.0f, 10.0f );
-				m_y4[_chnl] = tLimit(
-					( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p
-							- m_k * m_y4[_chnl],
-								-10.0f, 10.0f );
+				tmp = ( x + m_oldx[_chnl] ) * m_p - m_k * m_y1[_chnl];
+				m_y1[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+
+				tmp = ( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p - m_k * m_y2[_chnl];
+				m_y2[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+
+				tmp = ( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p - m_k * m_y3[_chnl];
+				m_y3[_chnl] = tLimit(tmp, -10.0f, 10.0f );
+
+				tmp = ( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p - m_k * m_y4[_chnl];
+				m_y4[_chnl] = tLimit(tmp, -10.0f, 10.0f );
 
 				m_oldx[_chnl] = x;
 				m_oldy1[_chnl] = m_y1[_chnl];
@@ -196,7 +366,7 @@ public:
 						m_y4[_chnl] * ( 1.0f / 6.0f );
 				break;
 			}
-
+		  */
 
 			// 4-times oversampled simulation of an active RC-Bandpass,-Lowpass,-Highpass-
 			// Filter-Network as it was used in nearly all modern analog synthesizers. This
@@ -331,7 +501,7 @@ public:
 				break;
 			}
 
-			case Formantfilter:
+			/*			case Formantfilter:
 			{
 				sample_t hp, bp, in;
 
@@ -443,7 +613,7 @@ public:
             
 				return( out/2.0f );
 				break;
-			}
+			} */
 			
 			default:
 				// filter
@@ -462,12 +632,12 @@ public:
 				break;
 		}
 
-		if( m_doubleFilter )
+		/* if( m_doubleFilter )
 		{
 			return m_subFilter->update( out, _chnl );
-		}
+			} */
 
-		// Clipper band limited sigmoid
+		// Clipper band limited sigmoid (WTF does this mean... here?)
 		return out;
 	}
 
@@ -550,12 +720,13 @@ public:
 			m_k = 2.0f * m_p - 1;
 			m_r = _q * powf( M_E, ( 1 - m_p ) * 1.386249f );
 
-			if( m_doubleFilter )
-			{
-				m_subFilter->m_r = m_r;
-				m_subFilter->m_p = m_p;
-				m_subFilter->m_k = m_k;
-			}
+			/* This exists only with LowPass
+			   if( m_doubleFilter )
+			   {
+			   m_subFilter->m_r = m_r;
+			   m_subFilter->m_p = m_p;
+			   m_subFilter->m_k = m_k;
+			   } */
 			return;
 		}
 

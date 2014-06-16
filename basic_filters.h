@@ -49,7 +49,12 @@ const float F_PI_2 = F_PI*0.5;
 #define qMin(A, B)	(((A) < (B)) ? (A) : (B))
 #define qMax(A, B)	(((A) > (B)) ? (A) : (B))
 #define qBound(N, V, M)	qMax(N, qMin(M, V))
-#define tLimit(x,x1,x2) qBound((x1), (x), (x2))
+
+template<class T>
+inline T tLimit( const T x, const T x1, const T x2 )
+{
+        return qBound( x1, x, x2 );
+}
 
 #else
 #include "lmms_basics.h"

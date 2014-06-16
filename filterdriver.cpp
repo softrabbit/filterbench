@@ -29,6 +29,7 @@ int main( int argc, const char* argv[] ) {
 
      basicFilters<2> * filter = new basicFilters<2>( SAMPLERATE );
      sample_t tmp1, tmp2;
+     sample_t tmp_array[2];
      int i;
 
      if( argc < 2 ) {
@@ -59,15 +60,22 @@ int main( int argc, const char* argv[] ) {
 	  
 	  // Assuming .25 seconds is enough to see any discrepancies
 	  for(i=0; i<(SAMPLERATE>>2); i++) {
+#ifdef BASELINE
 	       tmp1 = filter->update( buffer[i % BUFFERSIZE], 0 );
 	       cout << tmp1 << endl;
+#else
+	       tmp_array[0] =  buffer[i % BUFFERSIZE];
+	       filter->update_n( tmp_array );
+	       cout << tmp_array[0] << endl;	       
+#endif
+	      
 	  }
 	  cout.flush();
 	  return 0;
      } 
 
 
-     // Test only setting frequency
+     // Test only setting frequency, worst case scenario is once per frame
      if(argc>2 && string(argv[2]) == "coeffs") {
 	  for(i=0; i<BUFFERSIZE; i++) {
 	       buffer[i] = 8000.0 + buffer[i]*7000.0;
@@ -89,8 +97,14 @@ int main( int argc, const char* argv[] ) {
      filter->calcFilterCoeffs( 10000.0, 1.0 );
      
      for(i=0; i<ITERATIONS; i++) {
+#ifdef BASELINE
 	  tmp1 = filter->update( buffer[i % BUFFERSIZE], 0 );
 	  tmp2 = filter->update( buffer[(i+100) % BUFFERSIZE], 1 );
+#else
+	  tmp_array[0] = buffer[i % BUFFERSIZE];
+	  tmp_array[1] = buffer[(i+100) % BUFFERSIZE];
+	  filter->update_n( tmp_array );
+#endif
      }
      
 
