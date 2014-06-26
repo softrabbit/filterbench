@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Benchmarking filters from LMMS.
+# Lots of hardcoded paths and stuff in here, so you may need to tweak stuff
+# (should make a Makefile or something, but this kinda grew from a simple loop...)
+
 # All filters
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter"
 # "faster" filters, the ones not 4x oversampled internally
@@ -57,9 +61,12 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then
 		ARGSTR="denormal"
 	    fi
 
-	    while [ $((COUNT--)) -gt 0 ] ; do
-		/usr/bin/time -f "%U %C" $BINDIR/$BINARY $F $ARGSTR
-	    done
+	    ( while [ $((COUNT--)) -gt 0 ] ; do
+		/usr/bin/time -f "%U %C" $BINDIR/$BINARY $F $ARGSTR 
+	    done ) |& /usr/bin/awk \
+	    'BEGIN {sum=0; n=0; } \
+                   {sum+=$1; n++; print; }\
+             END { avg=sum/n; printf("Average: %.2f seconds, %.2f units/s\n", avg, 1/avg); }'
 	    echo ""
 	done
 	echo "-------------------"
