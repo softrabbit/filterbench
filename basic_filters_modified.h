@@ -35,30 +35,9 @@
 
 #include <math.h>
 
-#ifdef STANDALONE
-#include <stdint.h>
-#include <cstddef>
-
-typedef uint32_t sample_rate_t;
-typedef uint8_t ch_cnt_t;
-typedef float sample_t;
-
-const float F_PI = 3.1415926535f;
-const float F_2PI = 2*F_PI;
-const float F_PI_2 = F_PI*0.5;
-#define qMin(A, B)	(((A) < (B)) ? (A) : (B))
-#define qMax(A, B)	(((A) > (B)) ? (A) : (B))
-#define qBound(N, V, M)	qMax(N, qMin(M, V))
-
-template<class T>
-inline T tLimit( const T x, const T x1, const T x2 )
-{
-        return qBound( x1, x, x2 );
-}
-
-
-#else
 #include "lmms_basics.h"
+
+#ifndef STANDALONE
 #include "Mixer.h"
 #include "templates.h"
 #include "lmms_constants.h"
