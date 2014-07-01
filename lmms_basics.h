@@ -28,4 +28,17 @@ inline T tLimit( const T x, const T x1, const T x2 )
         return qBound( x1, x, x2 );
 }
 
+// interpolation.h
+inline float linearInterpolate( float v0, float v1, float x )
+{
+// take advantage of fma function if present in hardware
+
+#ifdef FP_FAST_FMAF
+        return fmaf( x, v1-v0, v0 );
+#else
+        return x * (v1-v0) + v0;
+#endif  
+}
+
+
 #endif
