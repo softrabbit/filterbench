@@ -5,10 +5,8 @@
 # (should make a Makefile or something, but this kinda grew from a simple loop...)
 
 # All filters
-FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter"
-# "faster" filters, the ones not 4x oversampled internally
-#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass"
-#FILTERS="Formantfilter"
+FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter DoubleMoog	Lowpass_SV Bandpass_SV Highpass_SV Notch_SV FastFormant	Tripole"
+
 
 # How to optimize
 OPTIMIZE="-O2 -msse2 -mfpmath=sse"

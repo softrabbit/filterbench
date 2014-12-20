@@ -12,6 +12,13 @@ typedef float sample_t;
 const float F_PI = 3.1415926535f;
 const float F_2PI = 2*F_PI;
 const float F_PI_2 = F_PI*0.5;
+const double D_PI = (double) 3.14159265358979323846264338327950288419716939937510;
+const double D_2PI = (double) D_PI * 2.0;
+const float F_E = (float) 2.71828182845904523536028747135266249775724709369995;
+
+
+// No need to involve the new memory manager in testing the algorithms
+#define MM_OPERATORS /* */
 
 // From qglobal.h
 template <typename T>
@@ -21,6 +28,10 @@ inline const T &qMax(const T &a, const T &b) { return (a < b) ? b : a; }
 template <typename T>
 inline const T &qBound(const T &min, const T &val, const T &max)
 { return qMax(min, qMin(max, val)); }
+
+template <typename T>
+inline T qAbs(const T &t) { return t >= 0 ? t : -t; }
+
 
 template<class T>
 inline T tLimit( const T x, const T x1, const T x2 )

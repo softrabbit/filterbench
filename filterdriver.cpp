@@ -2,9 +2,9 @@
 
 #define STANDALONE
 #ifdef BASELINE
-#include "basic_filters.h"
+#include "BasicFilters.h"
 #else
-#include "basic_filters_modified.h"
+#include "BasicFilters_modified.h"
 #endif
 
 #include <iostream>
@@ -24,10 +24,12 @@ int main( int argc, const char* argv[] ) {
      const string filternames[] = { "LowPass", "HiPass", "BandPass_CSG", "BandPass_CZPG", "Notch",
 				    "AllPass", "Moog", "DoubleLowPass", "Lowpass_RC12", "Bandpass_RC12",
 				    "Highpass_RC12", "Lowpass_RC24", "Bandpass_RC24", "Highpass_RC24",
-				    "Formantfilter" };
-     const int filters=15;
+				    "Formantfilter", "DoubleMoog", "Lowpass_SV", "Bandpass_SV",	
+				    "Highpass_SV", "Notch_SV", "FastFormant", "Tripole" };
 
-     basicFilters<2> * filter = new basicFilters<2>( SAMPLERATE );
+     const int filters=22;
+
+     BasicFilters<2> * filter = new BasicFilters<2>( SAMPLERATE );
      sample_t tmp1, tmp2;
      sample_t tmp_array[2];
      int i;
@@ -64,6 +66,7 @@ int main( int argc, const char* argv[] ) {
 	       tmp1 = filter->update( buffer[i % BUFFERSIZE], 0 );
 	       cout << tmp1 << endl;
 #else
+	       // 
 	       tmp_array[0] =  buffer[i % BUFFERSIZE];
 	       filter->update_n( tmp_array );
 	       cout << tmp_array[0] << endl;	       
