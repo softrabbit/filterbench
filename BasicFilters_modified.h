@@ -173,6 +173,17 @@ public:
 			m_z2[i] = 0.0f;
 		}
 	}
+
+	inline void update_n( sample_t *_in0 ) {
+		for(ch_cnt_t ch=0; ch < CHANNELS; ++ch) {
+			// biquad filter in transposed form
+			const float out = m_z1[ch] + m_b0 * _in0[ch];
+			m_z1[ch] = m_b1 * _in0[ch] + m_z2[ch] - m_a1 * out;
+			m_z2[ch] = m_b2 * _in0[ch] - m_a2 * out;
+			_in0[ch] = out;
+		}
+	}
+
 	inline float update( float in, ch_cnt_t ch )
 	{
 		// biquad filter in transposed form
@@ -335,8 +346,30 @@ public:
 
 	// Filter all channels in place in one call
 	inline void update_n( sample_t *_in0 ) {
-		for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
-			_in0[_chnl] = update(_in0[_chnl], _chnl);
+		
+		switch( m_type )
+		{
+		case Moog:
+		case Tripole:
+		case Lowpass_SV:
+		case Bandpass_SV:
+		case Highpass_SV:
+		case Notch_SV:
+		case Lowpass_RC12:
+		case Highpass_RC12:
+		case Bandpass_RC12:
+		case Lowpass_RC24:
+		case Highpass_RC24:
+		case Bandpass_RC24:
+		case Formantfilter:
+		case FastFormant:
+			for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+				_in0[_chnl] = update(_in0[_chnl], _chnl);
+			}	
+			break;
+		default:
+			m_biQuad.update_n( _in0 );
+			break;
 		}
 	}
 

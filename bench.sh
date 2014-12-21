@@ -1,19 +1,30 @@
 #!/bin/bash
 
 # Benchmarking filters from LMMS.
-# Lots of hardcoded paths and stuff in here, so you may need to tweak stuff
-# (should make a Makefile or something, but this kinda grew from a simple loop...)
+# Lots of hardcoded paths and stuff in here, so you may need to tweak stuff,
+# but at least it works on my Ubuntu system. (should make a Makefile or something, 
+# but this kinda grew from a simple loop...)
 
 # All filters
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter DoubleMoog	Lowpass_SV Bandpass_SV Highpass_SV Notch_SV FastFormant	Tripole"
 
+#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass"
+
+# Where's gnuplot? comment this out to use cat instead
+GNUPLOT=/usr/bin/gnuplot
 
 # How to optimize
-OPTIMIZE="-O2 -msse2 -mfpmath=sse"
+BASELINE="-O2"
+OPTIMIZE="-O2 -fno-exceptions"
+
+
+################################################################
 
 BINDIR=tests
 OUTDIR=output
-
+UNAME=$(uname -rps)
+CPU=$(cat /proc/cpuinfo |awk '/^model name/ { $1=""; $2=""; $3=""; sub(/[[:space:]]+/,""); print ;exit}')
+GCC=$(gcc --version |head -n1)
 if [ $# -eq 0 ] ; then
     echo "Usage: $0 [options]"
     echo -e "\t--compile   \tBuild all versions"
@@ -31,7 +42,7 @@ if [ "$1" == "--compile" ] ; then
     mkdir $BINDIR
     echo "Compiling baseline"
     # Baseline
-    g++ -DBASELINE -o $BINDIR/baseline filterdriver.cpp -O2
+    g++ -DBASELINE -o $BINDIR/baseline filterdriver.cpp $BASELINE
     # Baseline with compile-time optimization
     g++ -DBASELINE -o $BINDIR/optimized filterdriver.cpp $OPTIMIZE
 fi
@@ -43,7 +54,15 @@ if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then
 fi
 
 if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 
+    echo -e "#filter\tbase\topt\tmod" >output/results.dat
     for F in $FILTERS ; do
+	ARGSTR=""
+	if [ $1 == "--coeffs" ] ; then 
+	    ARGSTR="coeffs"
+	elif [ $1 == "--denormal" ] ; then 
+	    ARGSTR="denormal"
+	fi
+	echo -n $F >>output/results.dat
 	for BINARY in baseline optimized modified ; do 
 
 	    if [ $# -gt 1 ] ; then 
@@ -52,23 +71,36 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then
 		COUNT=1
 	    fi
 
-	    ARGSTR=""
-	    if [ $1 == "--coeffs" ] ; then 
-		ARGSTR="coeffs"
-	    elif [ $1 == "--denormal" ] ; then 
-		ARGSTR="denormal"
-	    fi
-
+	    # Output in gnuplot-friendly format... units/s, i.e. the inverse of average time
 	    ( while [ $((COUNT--)) -gt 0 ] ; do
 		/usr/bin/time -f "%U %C" $BINDIR/$BINARY $F $ARGSTR 
 	    done ) |& /usr/bin/awk \
 	    'BEGIN {sum=0; n=0; } \
-                   {sum+=$1; n++; print; }\
-             END { avg=sum/n; printf("Average: %.2f seconds, %.2f units/s\n", avg, 1/avg); }'
-	    echo ""
+                   {sum+=$1; n++; }\
+             END { avg=sum/n; printf("\t%.2f", 1/avg); }' >> output/results.dat
 	done
-	echo "-------------------"
+	echo "" >> output/results.dat
     done
+	if [ "$ARGSTR" == "" ] ; then 
+	    ARGSTR="filtering"
+	fi
+	if [ $GNUPLOT ] ; then 
+	    $GNUPLOT -p <<EOF
+set title "filterbench - $ARGSTR - units/s, bigger is better\n$UNAME ($CPU), $GCC"
+set tic scale 0
+set yrange [0:]
+set grid ytics
+set key outside bottom center horizontal
+set style fill solid 1.00  
+set style data histograms 
+set boxwidth 1.0
+set xtics nomirror rotate by -45
+plot "output/results.dat" using 2:xtic(1) title "$BASELINE" lt rgb "#800000", "" using 3 title "$OPTIMIZE" lt rgb "#008000", "" using 4 title "mod $OPTIMIZE" lt rgb "#000080"
+EOF
+
+	else
+	    cat output/results.dat
+	fi
 fi
 
 if [ "$1" == "--check" ] ; then 
