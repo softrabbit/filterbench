@@ -369,6 +369,12 @@ public:
 			break;
 		default:
 			m_biQuad.update_n( _in0 );
+			if( m_doubleFilter )
+			{
+				return m_subFilter->update_n( _in0 );
+			}
+
+
 			break;
 		}
 	}
