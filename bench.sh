@@ -5,20 +5,24 @@
 # but at least it works on my Ubuntu system. (should make a Makefile or something, 
 # but this kinda grew from a simple loop...)
 
-# All filters
-FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12	Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter DoubleMoog	Lowpass_SV Bandpass_SV Highpass_SV Notch_SV FastFormant	Tripole"
-
-#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass"
+# Select filters to test, see below for list of all
+FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass Tripole Moog DoubleMoog"
 
 # Where's gnuplot? comment this out to use cat instead
 GNUPLOT=/usr/bin/gnuplot
 
 # How to optimize
-BASELINE="-O2"
-OPTIMIZE="-O2 -fno-exceptions"
+BASELINE="-O2 -fno-exceptions"
+OPTIMIZE="-O2 -fno-exceptions -ftree-vectorize"
 
 
 ################################################################
+
+ALL_FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass Moog DoubleLowPass Lowpass_RC12 Bandpass_RC12 Highpass_RC12 Lowpass_RC24 Bandpass_RC24 Highpass_RC24 Formantfilter DoubleMoog Lowpass_SV Bandpass_SV Highpass_SV Notch_SV FastFormant Tripole"
+
+if [ "$FILTERS" == "" ] ; then
+    FILTERS=$ALL_FILTERS
+fi
 
 BINDIR=tests
 OUTDIR=output
@@ -106,7 +110,7 @@ fi
 if [ "$1" == "--check" ] ; then 
     # Compare output of optimized and modified, doesn't work too well with -ffast-math
     mkdir $OUTDIR
-    for F in $FILTERS ; do 
+    for F in $ALL_FILTERS ; do 
 	$BINDIR/optimized $F output > $OUTDIR/$F-opt
 	$BINDIR/modified $F output > $OUTDIR/$F-mod
 	if diff -sq $OUTDIR/$F-opt $OUTDIR/$F-mod >/dev/null ; then

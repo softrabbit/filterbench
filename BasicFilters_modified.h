@@ -346,11 +346,83 @@ public:
 
 	// Filter all channels in place in one call
 	inline void update_n( sample_t *_in0 ) {
-		
+		sample_t out;
 		switch( m_type )
 		{
-		case Moog:
+			case Moog:
+			{
+				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+					sample_t x = _in0[_chnl] - m_r*m_y4[_chnl];
+
+					// four cascaded onepole filters
+					// (bilinear transform)
+					m_y1[_chnl] = qBound( -10.0f,
+							      ( x + m_oldx[_chnl] ) * m_p
+							      - m_k * m_y1[_chnl],
+							      10.0f );
+					m_y2[_chnl] = qBound( -10.0f,
+							      ( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
+							      - m_k * m_y2[_chnl],
+							      10.0f );
+					m_y3[_chnl] = qBound( -10.0f,
+							      ( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
+							      - m_k * m_y3[_chnl],
+							      10.0f );
+					m_y4[_chnl] = qBound( -10.0f,
+							      ( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p
+							      - m_k * m_y4[_chnl],
+							      10.0f );
+
+					m_oldx[_chnl] = x;
+					m_oldy1[_chnl] = m_y1[_chnl];
+					m_oldy2[_chnl] = m_y2[_chnl];
+					m_oldy3[_chnl] = m_y3[_chnl];
+					out = m_y4[_chnl] - m_y4[_chnl] * m_y4[_chnl] *
+						m_y4[_chnl] * ( 1.0f / 6.0f );
+					_in0[_chnl]=out;
+				}
+				if( m_doubleFilter )
+				{
+					m_subFilter->update_n( _in0 );
+				}
+				break;
+			}
+
 		case Tripole:
+			// 3x onepole filters with 4x oversampling and interpolation of oversampled signal:
+			// input signal is linear-interpolated after oversampling, output signal is averaged from oversampled outputs
+			for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+				out = 0.0f;
+				float ip = 0.0f;
+
+				for( int i = 0; i < 4; ++i )
+				{
+					ip += 0.25f;
+					sample_t x = linearInterpolate( m_last[_chnl], _in0[_chnl], ip ) - m_r * m_y3[_chnl];
+					
+					m_y1[_chnl] = qBound( -10.0f,
+							      ( x + m_oldx[_chnl] ) * m_p
+							      - m_k * m_y1[_chnl],
+							      10.0f );
+					m_y2[_chnl] = qBound( -10.0f,
+							      ( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
+							      - m_k * m_y2[_chnl],
+							      10.0f );
+					m_y3[_chnl] = qBound( -10.0f,
+							      ( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
+							      - m_k * m_y3[_chnl],
+							      10.0f );
+					m_oldx[_chnl] = x;
+					m_oldy1[_chnl] = m_y1[_chnl];
+					m_oldy2[_chnl] = m_y2[_chnl];
+					
+					out += ( m_y3[_chnl] - m_y3[_chnl] * m_y3[_chnl] * m_y3[_chnl] * ( 1.0f / 6.0f ) );
+				}
+				m_last[_chnl] = _in0[_chnl];
+				_in0[_chnl] = out*.25;
+			}
+			break;
+			
 		case Lowpass_SV:
 		case Bandpass_SV:
 		case Highpass_SV:
@@ -371,7 +443,7 @@ public:
 			m_biQuad.update_n( _in0 );
 			if( m_doubleFilter )
 			{
-				return m_subFilter->update_n( _in0 );
+				m_subFilter->update_n( _in0 );
 			}
 
 
@@ -384,37 +456,6 @@ public:
 		sample_t out;
 		switch( m_type )
 		{
-			case Moog:
-			{
-				sample_t x = _in0 - m_r*m_y4[_chnl];
-
-				// four cascaded onepole filters
-				// (bilinear transform)
-				m_y1[_chnl] = qBound( -10.0f,
-						( x + m_oldx[_chnl] ) * m_p
-							- m_k * m_y1[_chnl],
-								10.0f );
-				m_y2[_chnl] = qBound( -10.0f,
-					( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
-							- m_k * m_y2[_chnl],
-								10.0f );
-				m_y3[_chnl] = qBound( -10.0f,
-					( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
-							- m_k * m_y3[_chnl],
-								10.0f );
-				m_y4[_chnl] = qBound( -10.0f,
-					( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p
-							- m_k * m_y4[_chnl],
-								10.0f );
-
-				m_oldx[_chnl] = x;
-				m_oldy1[_chnl] = m_y1[_chnl];
-				m_oldy2[_chnl] = m_y2[_chnl];
-				m_oldy3[_chnl] = m_y3[_chnl];
-				out = m_y4[_chnl] - m_y4[_chnl] * m_y4[_chnl] *
-						m_y4[_chnl] * ( 1.0f / 6.0f );
-				break;
-			}
 			
 			// 3x onepole filters with 4x oversampling and interpolation of oversampled signal:
 			// input signal is linear-interpolated after oversampling, output signal is averaged from oversampled outputs

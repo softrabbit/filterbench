@@ -1,6 +1,6 @@
 # filterbench
 
-This is a primitive benchmark for the note filters in LMMS. The test is basically filtering 100 seconds of 96k stereo sound, so the reported running time should roughly indicate how many percent of one CPU core one instance of a filter uses.
+This is a primitive benchmark for the note filters in LMMS. The test is basically filtering 100 seconds of 96k stereo sound, and the reported units/second reflects how many of these units the filter handles in a second.
 
 1. Edit `bench.sh`to select filters to benchmark and set optimization options
 2. Run `bench.sh --compile` to generate the following binaries in directory `tests`:
