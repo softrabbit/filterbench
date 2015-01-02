@@ -19,6 +19,8 @@ OPTIMIZE="-O2 -fno-exceptions -ftree-vectorize"
 # Extra flags for modified version
 EXTRAS="-DMOOG_SSE"
 
+# Defines for all versions, CHANCOUNT defaults to 2
+#DEFINES="-DCHANCOUNT=4"
 
 ################################################################
 
@@ -50,15 +52,15 @@ if [ "$1" == "--compile" ] ; then
     mkdir $BINDIR
     echo "Compiling baseline"
     # Baseline
-    g++ -DBASELINE -o $BINDIR/baseline filterdriver.cpp $BASELINE
+    g++ -DBASELINE -o $BINDIR/baseline filterdriver.cpp $BASELINE $DEFINES
     # Baseline with compile-time optimization
-    g++ -DBASELINE -o $BINDIR/optimized filterdriver.cpp $OPTIMIZE
+    g++ -DBASELINE -o $BINDIR/optimized filterdriver.cpp $OPTIMIZE $DEFINES
 fi
 
 if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then 
     mkdir $BINDIR
-    echo "Compiling modified ( g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS)"
-    g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS
+    echo "Compiling modified ( g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS $DEFINES)"
+    g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS $DEFINES
 fi
 
 if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 
@@ -94,7 +96,7 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then
 	fi
 	if [ $GNUPLOT ] ; then 
 	    $GNUPLOT -p <<EOF
-set title "filterbench - $ARGSTR - units/s, bigger is better\n$UNAME ($CPU), $GCC"
+set title "$ARGSTR - units/s, bigger is better\n$GCC"
 set tic scale 0
 set yrange [0:]
 set grid ytics
@@ -113,6 +115,9 @@ fi
 
 if [ "$1" == "--check" ] ; then 
     # Compare output of optimized and modified, doesn't work too well with -ffast-math
+    # For detailed comparison: 
+    # paste output/$FILTER-opt output/$FILTER-mod |awk '{print ($1 - $2)}'
+
     mkdir $OUTDIR
     for F in $ALL_FILTERS ; do 
 	$BINDIR/optimized $F output > $OUTDIR/$F-opt

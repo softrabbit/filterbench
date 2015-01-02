@@ -366,7 +366,6 @@ public:
 			{			
 #ifdef MOOG_SSE
 							if(CHANNELS <= 4) {
-							// Ugly 2-channel solution for fun... 
 							__m128 x_v, in0_v;
 							const __m128 plus10 = _mm_set_ps1(10.0);
 							const __m128 minus10 = _mm_set_ps1(-10.0);
@@ -375,8 +374,13 @@ public:
 							// TODO: probably not the most elegant solution...
 							switch( CHANNELS ) 
 							{
+							case 1:
+											in0_v = _mm_set_ps(0.0, 0.0, 0.0, _in0[0]);
 							case 2:
 											in0_v = _mm_set_ps(0.0, 0.0, _in0[1], _in0[0]);
+											break;
+							case 3:
+											in0_v = _mm_set_ps(0.0, _in0[2], _in0[1], _in0[0]);
 											break;
 							case 4:
 											in0_v = _mm_set_ps(_in0[3], _in0[2], _in0[1], _in0[0]);
@@ -424,9 +428,8 @@ public:
 																				 _mm_mul_ps(y4_v, x_v) )
 											);
 							_mm_storeu_ps (res, in0_v);
-							_in0[0] = res[0]; _in0[1] = res[1];
-							if(CHANNELS == 4) {
-											_in0[3] = res[3]; _in0[2] = res[2];
+							for(int i=0 ; i<CHANNELS; ++i) {
+											_in0[i] = res[i];
 							}
 							} else {
 #else			       

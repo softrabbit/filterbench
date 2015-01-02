@@ -7,7 +7,12 @@
 #include "BasicFilters_modified.h"
 #endif
 
+#ifndef CHANCOUNT
+#define CHANCOUNT 2
+#endif
+
 #include <iostream>
+
 
 using namespace std;
 
@@ -29,9 +34,9 @@ int main( int argc, const char* argv[] ) {
 
      const int filters=22;
 
-     BasicFilters<2> * filter = new BasicFilters<2>( SAMPLERATE );
-     sample_t tmp1, tmp2;
-     sample_t tmp_array[2];
+     BasicFilters<CHANCOUNT> * filter = new BasicFilters<CHANCOUNT>( SAMPLERATE );
+     sample_t tmp1, tmp2, tmp3, tmp4;
+     sample_t tmp_array[CHANCOUNT];
      int i;
 
      if( argc < 2 ) {
@@ -103,9 +108,18 @@ int main( int argc, const char* argv[] ) {
 #ifdef BASELINE
 	  tmp1 = filter->update( buffer[i % BUFFERSIZE], 0 );
 	  tmp2 = filter->update( buffer[(i+100) % BUFFERSIZE], 1 );
+	  if(CHANCOUNT == 4) {
+		  tmp3 = filter->update( buffer[i % BUFFERSIZE], 2 );
+		  tmp4 = filter->update( buffer[(i+100) % BUFFERSIZE], 3 );
+	  }	  
+
 #else
 	  tmp_array[0] = buffer[i % BUFFERSIZE];
 	  tmp_array[1] = buffer[(i+100) % BUFFERSIZE];
+	  if(CHANCOUNT == 4) {
+		  tmp_array[2] = buffer[i % BUFFERSIZE];
+		  tmp_array[3] = buffer[(i+100) % BUFFERSIZE];
+	  }
 	  filter->update_n( tmp_array );
 #endif
      }
