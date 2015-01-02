@@ -47,6 +47,10 @@
 #include "MemoryManager.h"
 #endif
 
+#ifdef MOOG_SSE
+#include <emmintrin.h>
+#include <mmintrin.h>
+#endif
 
 
 template<ch_cnt_t CHANNELS> class BasicFilters;
@@ -319,13 +323,22 @@ public:
 		m_biQuad.clearHistory();
 
 		// reset in/out history
+
+		for(int i=0; i<6; i++)
+			for( ch_cnt_t _chnl = 0; _chnl < CHANNELS; ++_chnl )
+				m_vfbp[i][_chnl] = m_vfhp[i][_chnl] = m_vflast[i][_chnl] = 0.0f;
+
+#ifdef MOOG_SSE		
+		y1_v = y2_v = y3_v = y4_v =
+						oldx_v = oldy1_v = oldy2_v = oldy3_v = 
+						_mm_set_ps1(0.0);
+#endif
 		for( ch_cnt_t _chnl = 0; _chnl < CHANNELS; ++_chnl )
 		{
 			// reset in/out history for moog-filter
 			m_y1[_chnl] = m_y2[_chnl] = m_y3[_chnl] = m_y4[_chnl] =
 					m_oldx[_chnl] = m_oldy1[_chnl] =
 					m_oldy2[_chnl] = m_oldy3[_chnl] = 0.0f;
-			
 			// tripole
 			m_last[_chnl] = 0.0f;
 
@@ -333,8 +346,6 @@ public:
 			m_rclp0[_chnl] = m_rcbp0[_chnl] = m_rchp0[_chnl] = m_rclast0[_chnl] = 0.0f;
 			m_rclp1[_chnl] = m_rcbp1[_chnl] = m_rchp1[_chnl] = m_rclast1[_chnl] = 0.0f;
 
-			for(int i=0; i<6; i++)
-			   m_vfbp[i][_chnl] = m_vfhp[i][_chnl] = m_vflast[i][_chnl] = 0.0f;
 			   
 			// reset in/out history for SV-filters
 			m_delay1[_chnl] = 0.0f;
@@ -347,40 +358,117 @@ public:
 	// Filter all channels in place in one call
 	inline void update_n( sample_t *_in0 ) {
 		sample_t out;
+		sample_t x[CHANNELS];
 		switch( m_type )
 		{
 			case Moog:
-			{
-				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
-					sample_t x = _in0[_chnl] - m_r*m_y4[_chnl];
+			
+			{			
+#ifdef MOOG_SSE
+							if(CHANNELS <= 4) {
+							// Ugly 2-channel solution for fun... 
+							__m128 x_v, in0_v;
+							const __m128 plus10 = _mm_set_ps1(10.0);
+							const __m128 minus10 = _mm_set_ps1(-10.0);
 
+							float res[4];
+							// TODO: probably not the most elegant solution...
+							switch( CHANNELS ) 
+							{
+							case 2:
+											in0_v = _mm_set_ps(0.0, 0.0, _in0[1], _in0[0]);
+											break;
+							case 4:
+											in0_v = _mm_set_ps(_in0[3], _in0[2], _in0[1], _in0[0]);
+											break;
+							}											
+							
+							x_v = _mm_sub_ps(in0_v,                   // in0 -
+															 _mm_mul_ps(r_v, y4_v) ); // m_r * m_y4
+							
+							// m_y1 = ( x + m_oldx ) * m_p - m_k * m_y1
+							y1_v  = _mm_sub_ps( 
+											_mm_mul_ps(_mm_add_ps( x_v, oldx_v), p_v ), // ( x + m_oldx ) * m_p
+											_mm_mul_ps(k_v, y1_v)                       // m_k * m_y1
+											);   
+							y1_v  = _mm_max_ps( minus10, _mm_min_ps(plus10,y1_v) ); // qBound
+
+							y2_v  = _mm_sub_ps( 
+											_mm_mul_ps(_mm_add_ps( y1_v, oldy1_v), p_v ), // ( m_y1 + m_oldy1 ) * m_p
+											_mm_mul_ps(k_v, y2_v)                         // m_k * m_y2
+											);  
+							y2_v  = _mm_max_ps(minus10, _mm_min_ps(plus10,y2_v) );
+
+							y3_v  = _mm_sub_ps( 
+											_mm_mul_ps(_mm_add_ps( y2_v, oldy2_v), p_v ), // ( m_y2 + m_oldy2 ) * m_p
+											_mm_mul_ps(k_v, y3_v)                         // m_k * m_y3
+											);  
+							y3_v  = _mm_max_ps(minus10, _mm_min_ps(plus10,y3_v) );
+
+							y4_v  = _mm_sub_ps( 
+											_mm_mul_ps(_mm_add_ps( y3_v, oldy3_v), p_v ), // ( m_y3 + m_oldy3 ) * m_p
+											_mm_mul_ps(k_v, y4_v)                         // m_k * m_y4
+											);  
+							y4_v  = _mm_max_ps(minus10, _mm_min_ps(plus10,y4_v) );
+				
+
+							oldx_v = x_v;
+							oldy1_v = y1_v;
+							oldy2_v = y2_v;
+							oldy3_v = y3_v;
+
+							x_v = _mm_set_ps1( 1.0f/6.0f);
+							in0_v = _mm_sub_ps(y4_v, 
+																 _mm_mul_ps(
+																				 _mm_mul_ps(y4_v, y4_v),
+																				 _mm_mul_ps(y4_v, x_v) )
+											);
+							_mm_storeu_ps (res, in0_v);
+							_in0[0] = res[0]; _in0[1] = res[1];
+							if(CHANNELS == 4) {
+											_in0[3] = res[3]; _in0[2] = res[2];
+							}
+							} else {
+#else			       
+				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+					x[_chnl] = _in0[_chnl] - m_r*m_y4[_chnl];
+				}
+
+				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
 					// four cascaded onepole filters
 					// (bilinear transform)
 					m_y1[_chnl] = qBound( -10.0f,
-							      ( x + m_oldx[_chnl] ) * m_p
-							      - m_k * m_y1[_chnl],
-							      10.0f );
+																( x[_chnl] + m_oldx[_chnl] ) * m_p
+																- m_k * m_y1[_chnl],
+																10.0f );
 					m_y2[_chnl] = qBound( -10.0f,
-							      ( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
-							      - m_k * m_y2[_chnl],
-							      10.0f );
+																( m_y1[_chnl] + m_oldy1[_chnl] ) * m_p
+																- m_k * m_y2[_chnl],
+																10.0f );
 					m_y3[_chnl] = qBound( -10.0f,
-							      ( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
-							      - m_k * m_y3[_chnl],
-							      10.0f );
+																( m_y2[_chnl] + m_oldy2[_chnl] ) * m_p
+																- m_k * m_y3[_chnl],
+																10.0f );
 					m_y4[_chnl] = qBound( -10.0f,
-							      ( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p
-							      - m_k * m_y4[_chnl],
-							      10.0f );
+																( m_y3[_chnl] + m_oldy3[_chnl] ) * m_p
+																- m_k * m_y4[_chnl],
+																10.0f );
+				}
 
-					m_oldx[_chnl] = x;
+				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
+					m_oldx[_chnl] = x[_chnl];
 					m_oldy1[_chnl] = m_y1[_chnl];
 					m_oldy2[_chnl] = m_y2[_chnl];
 					m_oldy3[_chnl] = m_y3[_chnl];
 					out = m_y4[_chnl] - m_y4[_chnl] * m_y4[_chnl] *
 						m_y4[_chnl] * ( 1.0f / 6.0f );
-					_in0[_chnl]=out;
+						_in0[_chnl]=out;
 				}
+#endif
+#ifdef MOOG_SSE
+							} 
+#endif
+
 				if( m_doubleFilter )
 				{
 					m_subFilter->update_n( _in0 );
@@ -389,17 +477,20 @@ public:
 			}
 
 		case Tripole:
+		{
 			// 3x onepole filters with 4x oversampling and interpolation of oversampled signal:
 			// input signal is linear-interpolated after oversampling, output signal is averaged from oversampled outputs
+			sample_t _out[CHANNELS];
 			for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
-				out = 0.0f;
-				float ip = 0.0f;
+				_out[_chnl] = 0.0f;
+			}
 
-				for( int i = 0; i < 4; ++i )
-				{
-					ip += 0.25f;
+			float ip = 0.0f;
+			for( int i = 0; i < 4; ++i )
+			{
+				ip += 0.25f;
+				for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
 					sample_t x = linearInterpolate( m_last[_chnl], _in0[_chnl], ip ) - m_r * m_y3[_chnl];
-					
 					m_y1[_chnl] = qBound( -10.0f,
 							      ( x + m_oldx[_chnl] ) * m_p
 							      - m_k * m_y1[_chnl],
@@ -416,13 +507,15 @@ public:
 					m_oldy1[_chnl] = m_y1[_chnl];
 					m_oldy2[_chnl] = m_y2[_chnl];
 					
-					out += ( m_y3[_chnl] - m_y3[_chnl] * m_y3[_chnl] * m_y3[_chnl] * ( 1.0f / 6.0f ) );
+					_out[_chnl] += ( m_y3[_chnl] - m_y3[_chnl] * m_y3[_chnl] * m_y3[_chnl] * ( 1.0f / 6.0f ) );
 				}
+			}
+			for(ch_cnt_t _chnl=0; _chnl< CHANNELS; _chnl++) {
 				m_last[_chnl] = _in0[_chnl];
-				_in0[_chnl] = out*.25;
+				_in0[_chnl] = _out[_chnl]*.25;
 			}
 			break;
-			
+		}	
 		case Lowpass_SV:
 		case Bandpass_SV:
 		case Highpass_SV:
@@ -884,6 +977,12 @@ public:
 				m_subFilter->m_p = m_p;
 				m_subFilter->m_k = m_k;
 			}
+			#ifdef MOOG_SSE
+			// SSE vector setup
+			p_v       = _mm_set_ps1(m_p);
+			k_v       = _mm_set_ps1(m_k);
+			r_v       = _mm_set_ps1(m_r);
+			#endif
 			return;
 		}
 		
@@ -976,9 +1075,6 @@ private:
 	// biquad filter
 	BiQuad<CHANNELS> m_biQuad;
 
-	// coeffs for moog-filter
-	float m_r, m_p, m_k;
-
 	// coeffs for RC-type-filters
 	float m_rca, m_rcb, m_rcc, m_rcq;
 
@@ -990,8 +1086,19 @@ private:
 
 	typedef sample_t frame[CHANNELS];
 
-	// in/out history for moog-filter
+  // coeffs for moog-filter
+	float m_r, m_p, m_k;
+
+#ifdef MOOG_SSE
+  // coeffs for moog-filter
+	__m128 r_v, p_v, k_v;
+	// in/out history for SSE moog-filter
+	__m128 y1_v, y2_v, y3_v, y4_v;
+	__m128 oldy1_v, oldy2_v, oldy3_v, oldx_v;
+#endif
+	// in/out history for moog-filter, shared with Tripole
 	frame m_y1, m_y2, m_y3, m_y4, m_oldx, m_oldy1, m_oldy2, m_oldy3;
+
 	// additional one for Tripole filter
 	frame m_last;
 

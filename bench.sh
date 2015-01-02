@@ -8,12 +8,16 @@
 # Select filters to test, see below for list of all
 FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass Tripole Moog DoubleMoog"
 
+
 # Where's gnuplot? comment this out to use cat instead
 GNUPLOT=/usr/bin/gnuplot
 
 # How to optimize
 BASELINE="-O2 -fno-exceptions"
 OPTIMIZE="-O2 -fno-exceptions -ftree-vectorize"
+
+# Extra flags for modified version
+EXTRAS="-DMOOG_SSE"
 
 
 ################################################################
@@ -53,8 +57,8 @@ fi
 
 if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then 
     mkdir $BINDIR
-    echo "Compiling modified ( $OPTIMIZE )"
-    g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE
+    echo "Compiling modified ( g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS)"
+    g++ -o $BINDIR/modified filterdriver.cpp $OPTIMIZE $EXTRAS
 fi
 
 if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 
