@@ -6,18 +6,18 @@
 # but this kinda grew from a simple loop...)
 
 # Select filters to test, see below for list of all
-FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass Tripole Moog DoubleMoog"
+#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass Tripole Moog DoubleMoog"
 
 
 # Where's gnuplot? comment this out to use cat instead
-GNUPLOT=/usr/bin/gnuplot
+GNUPLOT=$(which gnuplot)
 
 # How to optimize
-BASELINE="-O2 -fno-exceptions"
-OPTIMIZE="-O2 -fno-exceptions -ftree-vectorize"
+BASELINE="-msse3 -mfpmath=sse -O2 -fno-exceptions"
+OPTIMIZE="-msse3 -mfpmath=sse -O2 -fno-exceptions -ftree-vectorize"
 
-# Extra flags for modified version
-EXTRAS="-DMOOG_SSE"
+# Extra flags for modified version, disable MOOG_SSE for 32-bitters
+# EXTRAS="-DMOOG_SSE"
 
 # Defines for all versions, CHANCOUNT defaults to 2
 #DEFINES="-DCHANCOUNT=4"
@@ -64,8 +64,9 @@ if [ "$1" == "--compile" -o "$1" == "--mod" ] ; then
 fi
 
 if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then 
-    echo -e "#filter\tbase\topt\tmod" >output/results.dat
+    echo -e "#filter\tbase\topt\tmod\t%change" >output/results.dat
     for F in $FILTERS ; do
+		>&2 echo $F
 	ARGSTR=""
 	if [ $1 == "--coeffs" ] ; then 
 	    ARGSTR="coeffs"
@@ -73,7 +74,7 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then
 	    ARGSTR="denormal"
 	fi
 	echo -n $F >>output/results.dat
-	for BINARY in baseline optimized modified ; do 
+	( for BINARY in baseline optimized modified ; do 
 
 	    if [ $# -gt 1 ] ; then 
 		COUNT=$(($2+0))
@@ -87,29 +88,40 @@ if [ "$1" == "--run" -o "$1" == "--coeffs" -o "$1" == "--denormal" ] ; then
 	    done ) |& /usr/bin/awk \
 	    'BEGIN {sum=0; n=0; } \
                    {sum+=$1; n++; }\
-             END { avg=sum/n; printf("\t%.2f", 1/avg); }' >> output/results.dat
-	done
-	echo "" >> output/results.dat
+             END { avg=sum/n; printf(" %f", 1/avg); }' 
+	done ) | awk '{printf("\t%.2f\t%.2f\t%.2f\t%.2f\n", $1, $2, $3, ($3/$2)*100-100);}' >> output/results.dat
     done
 	if [ "$ARGSTR" == "" ] ; then 
 	    ARGSTR="filtering"
 	fi
 	if [ $GNUPLOT ] ; then 
 	    $GNUPLOT -p <<EOF
-set title "$ARGSTR - units/s, bigger is better\n$GCC"
+set title "$ARGSTR\n$GCC - $UNAME"
 set tic scale 0
 set yrange [0:]
-set grid ytics
+set ylabel "units/s"
+set ytics
+set y2range [-25:100]
+set y2label "percent change"
+set grid y2tics
+set y2tics
 set key outside bottom center horizontal
 set style fill solid 1.00  
 set style data histograms 
 set boxwidth 1.0
 set xtics nomirror rotate by -45
-plot "output/results.dat" using 2:xtic(1) title "$BASELINE" lt rgb "#800000", "" using 3 title "$OPTIMIZE" lt rgb "#008000", "" using 4 title "mod $OPTIMIZE" lt rgb "#000080"
+plot "output/results.dat" \
+    using 2:xtic(stringcolumn(1)." ".stringcolumn(5)."\%") \
+    title "$BASELINE" lt rgb "#ff8080",\
+  "" using 3 title "$OPTIMIZE" lt rgb "#80ff80", \
+  "" using 4 title "mod $OPTIMIZE" lt rgb "#8080ff", \
+  "" using 5 axes x1y2 title "change" lt rgb "#000000"
 EOF
 
 	else
+		echo ""
 	    cat output/results.dat
+		echo -e "(bigger is better)\n"
 	fi
 fi
 
