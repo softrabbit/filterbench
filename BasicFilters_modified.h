@@ -296,9 +296,14 @@ public:
 			: Moog;
 		if( m_subFilter == NULL )
 		{
-			m_subFilter = new BasicFilters<CHANNELS>(
+			void *ptr;
+			int foo = posix_memalign(&ptr, 16, sizeof(BasicFilters<CHANNELS>));
+			m_subFilter = new(ptr) BasicFilters<CHANNELS>(
+				static_cast<sample_rate_t>(
+					m_sampleRate ) );
+			/* m_subFilter = new BasicFilters<CHANNELS>(
 						static_cast<sample_rate_t>(
-							m_sampleRate ) );
+						m_sampleRate ) ); */
 		}
 		m_subFilter->m_type = m_type;
 	}
