@@ -12,7 +12,7 @@
 #endif
 
 #include <iostream>
-
+#include <stdlib.h>
 
 using namespace std;
 
@@ -34,7 +34,11 @@ int main( int argc, const char* argv[] ) {
 
      const int filters=22;
 
-     BasicFilters<CHANCOUNT> * filter = new BasicFilters<CHANCOUNT>( SAMPLERATE );
+     // BasicFilters<CHANCOUNT> * filter = new BasicFilters<CHANCOUNT>( SAMPLERATE );
+	 void *ptr;
+	 int foo = posix_memalign(&ptr, 16, sizeof(BasicFilters<CHANCOUNT>));
+	 BasicFilters<CHANCOUNT> * filter = new(ptr) BasicFilters<CHANCOUNT>( SAMPLERATE );
+
      sample_t tmp1, tmp2, tmp3, tmp4;
      sample_t tmp_array[CHANCOUNT];
      int i;
