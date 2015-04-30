@@ -1,5 +1,7 @@
 // A little filter benchmarking...
 
+#include <stdlib.h>
+
 #define STANDALONE
 #ifdef BASELINE
 #include "BasicFilters.h"
@@ -12,7 +14,7 @@
 #endif
 
 #include <iostream>
-#include <stdlib.h>
+
 
 using namespace std;
 

@@ -1,0 +1,14 @@
+# Select filters to test, if unset test all
+#FILTERS="LowPass HiPass BandPass_CSG BandPass_CZPG Notch AllPass DoubleLowPass Tripole Moog DoubleMoog"
+
+# How to compile, OPTIMIZE will be used for both optimized and modified versions
+BASELINE="-O2 -fno-exceptions"
+OPTIMIZE="-msse3 -mfpmath=sse -O2 -fno-exceptions -ftree-vectorize"
+
+# Extra flags for modified version
+EXTRAS="-DMOOG_SSE"
+
+# Defines for all versions, CHANCOUNT defaults to 2
+#DEFINES="-DCHANCOUNT=4"
+
+
