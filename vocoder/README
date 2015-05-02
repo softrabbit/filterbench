@@ -1,0 +1,21 @@
+
+A little tweaking of the vocoder plugin in LMMS.
+"make bench" runs the benchmark, "make compare" checks the output is OK after tweaking.
+
+Step 1. 
+Converted the bandpasses from arrays of structs to structs of arrays.
+Runtime something like 35-40% less at "-O2 -ftree-vectorize"
+
+Step 2.
+Converted the bands_out variable, too. No further gains in speed. 
+At -O3 the faster code is is actually slower than at -O2, whereas
+the original gains a little from -O2 to -O3 :)
+
+Step 3.
+Added inline keyword to vocoder_do_bandpasses(). Now at 45% gains
+using "-O2 -ftree-vectorize".
+
+Step 4.
+Created variable "sample" to accumulate output from bands in final loop
+in runVocoder(), cutting out a bunch of assignments. 50% shorter 
+runtime achieved = twice as fast code.
